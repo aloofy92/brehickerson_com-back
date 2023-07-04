@@ -1,9 +1,10 @@
-var express = require('express');
-var router = express.Router();
-var usersController = require('./controller/usersController');
-var { verifyToken } = require('../../middleware/authorization');
+const express = require('express');
+const router = express.Router();
+const usersController = require('./controller/usersController');
+const { verifyToken } = require('../../middleware/authorization');
+const Review = require('./model/Review.js');
 
-/* GET users listing. */
+// GET users listing
 router.get('/', function(req, res, next) {
   res.send('respond with a resource');
 });
@@ -84,13 +85,35 @@ router.get('/landlord-landlord/:Id/*', function(req, res) {
   res.send(`Landlord Listings ${req.params.Id}`);
 });
 
-// Create an Express app and mount the router
-var app = express();
-app.use('/users', router);
+// Save review
+router.post('/save-review', verifyToken, async function(req, res) {
+  try {
+    const reviewData = req.body || {};
 
-// Start the server
-app.listen(4000, function() {
-  console.log('Server is running on port 4000');
+    if (Object.keys(reviewData).length === 0) {
+      throw new Error("Review data is missing.");
+    }
+
+    // Create a new review document using the Review model
+    const newReview = new Review(reviewData);
+
+    // Save the new review to the database
+    const savedReview = await newReview.save();
+
+    console.log('Review submitted:', savedReview);
+    res.send('Review submitted successfully');
+  } catch (error) {
+    console.error('Error submitting review:', error);
+    res.status(500).send('Error submitting review');
+  }
+});
+
+// Login test route
+router.post('/login-test', function(req, res) {
+  console.log(req.body);
+  res.send({
+    email: req.body.email
+  });
 });
 
 module.exports = router;
